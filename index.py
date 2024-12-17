@@ -324,6 +324,7 @@ def fetch_medium_entries(feed_url, sitename):
         soup = BeautifulSoup(entry.summary, 'html.parser')
         summary = soup.get_text()
         summary = summary.replace('\n', '').replace('\r', '')
+        summary = summary.replace('Continue reading on Medium', '').replace('»', '')
 
         # Manage the img content
         img = None
@@ -542,13 +543,13 @@ async def fetch_rss_feeds():
         # Create a rich embed
         if summary == "none":
             embed = discord.Embed(
-                title="** " + title,
+                title=title,
                 url=link,
                 color=0xffffff  # Use white color
             )
         else:
             embed = discord.Embed(
-                title="** " + title,
+                title=title,
                 url=link,
                 description=summary,  # Description from RSS
                 color=0xffffff  # Use white color
@@ -577,10 +578,10 @@ async def fetch_rss_feeds():
                print(e)
                print("==========")
                break
-
-        # Mark the entry as sent in the database
-        mark_entry_as_sent(entry_id)
-        print(f"done: {entry_id}")
+           else:
+               # Mark the entry as sent in the database
+               mark_entry_as_sent(entry_id)
+               print(f"done: {entry_id}")
 
 
 
