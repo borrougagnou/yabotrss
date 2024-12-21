@@ -12,6 +12,7 @@ import re # clean html
 
 DEBUG = False
 ALLOW_SEND = False
+ALLOW_MARKED_SEND = True
 
 # Discord Bot Token and Channel ID
 DISCORD_TOKEN = ""
@@ -82,6 +83,7 @@ def fetch_thehackernews_entries(feed_url, sitename):
             continue
 
         # Manage the summary content
+        summary = None
         summary = entry.summary
 
         # Manage the img content
@@ -135,6 +137,7 @@ def fetch_devto_entries(feed_url, sitename):
             continue
 
         # Manage the summary content
+        summary = None
         summary = parse_html(entry.summary)  # Clean HTML from summary
 
         # Manage the img content
@@ -178,6 +181,7 @@ def fetch_waylonwalker_entries(feed_url, sitename):
             continue
 
         # Manage the summary content
+        summary = None
         summary = entry.summary  # Clean HTML from summary
 
         # Manage the img content
@@ -230,9 +234,11 @@ def fetch_theverge_entries(feed_url, sitename):
             continue
 
         # Manage the summary content
+        summary = None
         summary = parse_html(entry.summary)  # Clean HTML from summary
 
         # Manage the img content
+        img = None
         img = parse_html_img(entry.summary) # Search IMG from summary
 
         if DEBUG:
@@ -273,6 +279,7 @@ def fetch_arstechnica_entries(feed_url, sitename):
             continue
 
         # Manage the summary content
+        summary = None
         summary = parse_html(entry.summary)  # Clean HTML from summary
 
         # Manage the img content
@@ -578,10 +585,18 @@ async def fetch_rss_feeds():
                print(e)
                print("==========")
                break
-           else:
-               # Mark the entry as sent in the database
-               mark_entry_as_sent(entry_id)
-               print(f"done: {entry_id}")
+            else:
+                if ALLOW_MARKED_SEND:
+                    # Mark the entry as sent in the database
+                    mark_entry_as_sent(entry_id)
+                    print(f"done: {entry_id}")
+        else:
+            if ALLOW_MARKED_SEND:
+                # Mark the entry as sent in the database
+                mark_entry_as_sent(entry_id)
+                print(f"done: {entry_id}")
+
+
 
 
 

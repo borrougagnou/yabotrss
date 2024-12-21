@@ -19,6 +19,7 @@ pip requirement:
 ```
 
 
+---
 
 ## How to use
 
@@ -46,6 +47,7 @@ pip requirement:
 - Enable the "[Developper mode](https://support.discord.com/hc/en-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID)" in discord
 - [Copy your channel ID](https://support.discord.com/hc/en-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID) :warning: put the channel ID into the "DISCORD_CHANNEL_ID" variable in the index.py file !
 
+
 ### Python part:
 - Edit the "index.py" file.
 - put your Token Application in the "DISCORD_TOKEN" line
@@ -57,6 +59,8 @@ pip requirement:
 - save and execute: `python3 index.py`
 - Let the script running
 
+
+---
 
 ## How It work !
 The script begin to create a database file (if not exist), then it will check the RSS_FEED_URLS variable, and execute each "rss parser". Each rss parser will save into the database items of the feed like: the id, the title, the summary and if possible the image.
