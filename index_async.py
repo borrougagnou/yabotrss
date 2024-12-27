@@ -5,6 +5,7 @@ import requests # if we need to download image
 import base64 # if image need to be converted in base64
 from io import BytesIO # (to base64) binary stream using an in-memory bytes buffer
 import feedparser # parse rss feed
+import asyncio
 
 from bs4 import BeautifulSoup # parse html for parse_html
 from html import unescape # clean html
@@ -61,9 +62,9 @@ RSS_FEED_URLS = [
 ### PARSE RSS FEED URL ###
 ##########################
 
-def fetch_thehackernews_entries(feed_url, sitename):
+async def fetch_thehackernews_entries(feed_url, sitename):
     """Fetch entries from The Hacker News RSS feed."""
-    feed = feedparser.parse(feed_url)
+    feed = await asyncio.to_thread(feedparser.parse, feed_url)
     #if DEBUG:
     #    entry = feed.entries[0]
     #    print(f"==========")
@@ -113,12 +114,12 @@ def fetch_thehackernews_entries(feed_url, sitename):
                   f"==========\n\n")
 
         # Save entry to the database
-        save_entry(entry.id, sitename, entry.title, entry.link, summary, img)
+        await asyncio.to_thread(save_entry, entry.id, sitename, entry.title, entry.link, summary, img)
     return
 
-def fetch_devto_entries(feed_url, sitename):
+async def fetch_devto_entries(feed_url, sitename):
     """Fetch entries from Dev.to RSS feed."""
-    feed = feedparser.parse(feed_url)
+    feed = await asyncio.to_thread(feedparser.parse, feed_url)
     #if DEBUG:
     #    entry = feed.entries[0]
     #    print(f"==========")
@@ -158,12 +159,12 @@ def fetch_devto_entries(feed_url, sitename):
                   f"==========\n\n")
 
         # Save entry to the database
-        save_entry(entry.id, f"{sitename} - {entry.author}", entry.title, entry.link, summary, img)
+        await asyncio.to_thread(save_entry, entry.id, f"{sitename} - {entry.author}", entry.title, entry.link, summary, img)
     return
 
-def fetch_waylonwalker_entries(feed_url, sitename):
+async def fetch_waylonwalker_entries(feed_url, sitename):
     """Fetch entries from Waylon Walker RSS feed."""
-    feed = feedparser.parse(feed_url)
+    feed = await asyncio.to_thread(feedparser.parse, feed_url)
     #if DEBUG:
     #    entry = feed.entries[0]
     #    print(f"==========")
@@ -213,12 +214,12 @@ def fetch_waylonwalker_entries(feed_url, sitename):
                   f"==========\n\n")
 
         # Save entry to the database
-        save_entry(entry.id, sitename, entry.title, entry.link, summary, img)
+        await asyncio.to_thread(save_entry, entry.id, sitename, entry.title, entry.link, summary, img)
     return
 
-def fetch_theverge_entries(feed_url, sitename):
+async def fetch_theverge_entries(feed_url, sitename):
     """Fetch entries from The Verge RSS feed."""
-    feed = feedparser.parse(feed_url)
+    feed = await asyncio.to_thread(feedparser.parse, feed_url)
     #if DEBUG:
     #    entry = feed.entries[0]
     #    print(f"==========")
@@ -259,12 +260,12 @@ def fetch_theverge_entries(feed_url, sitename):
                   f"==========\n\n")
 
         # Save entry to the database
-        save_entry(entry.id, sitename, entry.title, entry.link, summary, img)
+        await asyncio.to_thread(save_entry, entry.id, sitename, entry.title, entry.link, summary, img)
     return
 
-def fetch_arstechnica_entries(feed_url, sitename):
+async def fetch_arstechnica_entries(feed_url, sitename):
     """Fetch entries from ArsTechnica RSS feed."""
-    feed = feedparser.parse(feed_url)
+    feed = await asyncio.to_thread(feedparser.parse, feed_url)
 #    if DEBUG:
 #        entry = feed.entries[0]
 #        print(f"==========")
@@ -307,12 +308,12 @@ def fetch_arstechnica_entries(feed_url, sitename):
                   f"==========\n\n")
 
         # Save entry to the database
-        save_entry(entry.id, sitename, entry.title, entry.link, summary, img)
+        await asyncio.to_thread(save_entry, entry.id, sitename, entry.title, entry.link, summary, img)
     return
 
-def fetch_medium_entries(feed_url, sitename):
+async def fetch_medium_entries(feed_url, sitename):
     """Fetch entries from <NAME> RSS feed."""
-    feed = feedparser.parse(feed_url)
+    feed = await asyncio.to_thread(feedparser.parse, feed_url)
     #if DEBUG:
     #    entry = feed.entries[0]
     #    print(f"==========")
@@ -335,7 +336,7 @@ def fetch_medium_entries(feed_url, sitename):
 
         # Manage the summary content
         summary = None
-        soup = BeautifulSoup(entry.summary, 'html.parser')
+        soup = await asyncio.to_thread(BeautifulSoup, entry.summary, 'html.parser')
         summary = soup.get_text()
         summary = summary.replace('\n', '').replace('\r', '')
         summary = summary.replace('Continue reading on Medium', '').replace('»', '')
@@ -362,12 +363,12 @@ def fetch_medium_entries(feed_url, sitename):
                   f"==========\n\n")
 
         # Save entry to the database
-        save_entry(entry.id, f"{sitename} - {entry.author}", entry.title, entry.link, summary, img)
+        await asyncio.to_thread(save_entry, entry.id, f"{sitename} - {entry.author}", entry.title, entry.link, summary, img)
     return
 
-#def fetch_TEMPLATE_entries(feed_url, sitename):
+#async def fetch_TEMPLATE_entries(feed_url, sitename):
 #    """Fetch entries from <NAME> RSS feed."""
-#    feed = feedparser.parse(feed_url)
+#    feed = await asyncio.to_thread(feedparser.parse, feed_url)
 #    #if DEBUG:
 #    #    entry = feed.entries[0]
 #    #    print(f"==========")
@@ -390,7 +391,7 @@ def fetch_medium_entries(feed_url, sitename):
 #
 #        # Manage the summary content
 #        summary = None
-#        soup = BeautifulSoup(entry.summary, 'html.parser')
+#        soup = await asyncio.to_thread(BeautifulSoup, entry.summary, 'html.parser')
 #        summary = soup.get_text()
 #        summary = summary.replace('\n', '').replace('\r', '')
 #
@@ -416,7 +417,7 @@ def fetch_medium_entries(feed_url, sitename):
 #                  f"==========\n\n")
 #
 #        # Save entry to the database
-#        save_entry(entry.id, sitename, entry.title, entry.link, summary, img)
+#        await asyncio.to_thread(save_entry, entry.id, sitename, entry.title, entry.link, summary, img)
 #    return
 
 
@@ -533,7 +534,7 @@ initialize_database()
 intents = discord.Intents.default()
 client = discord.Client(intents=intents)
 
-@tasks.loop(minutes=10)  # Check for new entries every 10 minutes
+@tasks.loop(minutes=8)  # Check for new entries every 10 minutes
 async def fetch_rss_feeds():
     channel = client.get_channel(int(DISCORD_CHANNEL_ID))
 
@@ -541,13 +542,14 @@ async def fetch_rss_feeds():
         print(f"Error: Could not find the channel with ID {DISCORD_CHANNEL_ID}")
         return
 
-    for feed in RSS_FEED_URLS:
-        feed_name = feed["name"]
-        feed_url  = feed["url"]
-        function_name = feed["function"]
-
-        # Dynamically call the associated function for each feed
-        entries = globals()[function_name](feed_url, feed_name)
+    # Collect all tasks for fetching feeds
+    tasks = [
+        globals()[feed["function"]](feed["url"], feed["name"])
+        for feed in RSS_FEED_URLS
+    ]
+    
+    # Run all tasks concurrently
+    await asyncio.gather(*tasks)
 
 
     # Send unsent entries

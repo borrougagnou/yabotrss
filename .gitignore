@@ -2,6 +2,7 @@
 test
 rss_feed.db
 index.orig.py
+index.async.py
 
 ### Vim ###
 # https://github.com/gisphm/vim-gitignore/blob/master/.gitignore

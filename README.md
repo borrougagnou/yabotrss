@@ -2,95 +2,139 @@
 
 This bot read RSS Flux from different source and send the title, description (and image maybe) on different platform.
 
-it requier few skill in python language if you want put your own rss.
+it requier few skill in python language if you want add your own rss feed.
 
-## Requirement
+## Changelog
+#### 20241227
+- Added new Async file : `index_async.py`
+- Blocking "Medium" Ads.
+- Reformat README.md
 
-- Python 3
-- Account on:
-    - https://discord.com/developers/applications
-
-pip requirement:
-```
-    - discord.py
-    - feedparser
-    - beautifulsoup4
-    - requests
-```
+#### 20241217
+- Fixed "Medium" RSS
+- Fixed Rich Embed showing `**` in the title
 
 
+## Summary
+- [YabotRSS](#yet-another-bot-rss)
+  - [Requirements](#requirements)
+  - [Installation](#installation)
+  - [Usage](#usage)
+    - [Parallel Code Execution](#parallel-code-execution)
+    - [Adding Discord Connections](#adding-discord-connections)
+        - [Configure discord](#-configure-discord-)
+        - [Configure bot for discord](#-configure-the-bot-for-discord-)
+    - [First Step](#first-step-)
+    - [Execution](#execution-)
+    - [Adding New RSS Flux](#adding-new-rss-flux)
+        - [RSS_FEED_URLS](#-rss_feed_urls-)
+        - [PARSE RSS FEED URL](#--parse-rss-feed-url--)
+    - [Disable existing RSS Flux](#disable-existing-rss-flux)
+  - [Debug](#debug-)
+  - [FAQ](#faq)
+
+
+## Requirements
+
+- Python 3.9+
+- Account on one of a compatible website:
+    - Discord: https://discord.com/developers/applications
+    - Telegram: #TODO
+    - Slack: #TODO
+
+
+## Installation
+
+- `git clone https://github.com/borrougagnou/yabotrss.git`
+- `pip install -r requirements.txt`
+
+## Usage
+### Parallel Code Execution:
+Now you have the choice between 2 bots:
+- `index.py` - the script will fetch each feed, one by one
+- `index_async.py` - the script will fetch each feed in parallels
+
+
+### Adding Discord Connections:
+
+#### > Configure Discord :
 ---
+[Create A New Discord Application](https://discord.com/developers/applications?new_application=true)
 
-## How to use
+      - Give it a name
+      > "Installation":
+          > "Installation Contexts":
+              - Check "User Install"
+              - Check "Guild Install"
+          > "Default Install Settings":
+              > "Guild Install":
+                  - Scope: 'applications.command', 'bot'
+                  - Permissions: 'Embed Links', 'Read Message History', 'Send Messages', 'Send Messages in Threads', 'View Channels'
+      > "Bot":
+          > Token: "Reset Token" :warning: put the new token in the "DISCORD_TOKEN" variable in the index.py file !
+          > "Authorization Flow":
+              - Check "Public Bot"
+          > "Privileged Gateway Intents":
+              - Check "Message Content Intent"
 
-### Discord Part:
-#### Application Menu
-- [Create New Application](https://discord.com/developers/applications?new_application=true)
-- Give it a name
-- "Installation":
-    - "Installation Contexts":
-        - Check "User Install"
-        - Check "Guild Install"
-    - "Default Install Settings":
-        - "Guild Install":
-            - Scope: 'applications.command', 'bot'
-            - Permissions: 'Embed Links', 'Read Message History', 'Send Messages', 'Send Messages in Threads', 'View Channels'
-- "Bot":
-    - Token: "Reset Token" :warning: put the new token in the "DISCORD_TOKEN" variable in the index.py file !
-    - "Authorization Flow":
-        - Check "Public Bot"
-    - "Privileged Gateway Intents":
-        - Check "Message Content Intent"
+Now add your bot on your server
+> [!IMPORTANT]
+> Enable the "[Developper mode](https://support.discord.com/hc/en-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID)" in your discord client
 
-#### Discord website
-- Add your bot on your server
-- Enable the "[Developper mode](https://support.discord.com/hc/en-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID)" in discord
-- [Copy your channel ID](https://support.discord.com/hc/en-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID) :warning: put the channel ID into the "DISCORD_CHANNEL_ID" variable in the index.py file !
-
-
-### Python part:
-- Edit the "index.py" file.
-- put your Token Application in the "DISCORD_TOKEN" line
-- put your Channel ID in the "DISCORD_CHANNEL_ID" line
-- Change the variable "ALLOW_SEND" to False
-- save and execute: `python3 index.py`
-- Wait the script to finish the first launch, then quit.
-- Change the variable "ALLOW_SEND" to True
-- save and execute: `python3 index.py`
-- Let the script running
-
-
+#### > Configure the bot for discord :
 ---
+- Copy your Discord Token. Get it from [Discord Developers Portal](https://discord.com/developers/applications)
 
-## How It work !
-The script begin to create a database file (if not exist), then it will check the RSS_FEED_URLS variable, and execute each "rss parser". Each rss parser will save into the database items of the feed like: the id, the title, the summary and if possible the image.
-<br/><br/>
-After the parsing step, the script will check unsent entries in the database and send all of theses entries in discord then mark each entry as sent.
+      > <your discord app>
+          > "Bot" (left menu):
+              > Token: "Reset Token" and copy the new one !
 
-### How to begin
-**First thing to do**: :warning: CHANGE THE VARIABLE "ALLOW_SEND" TO FALSE ! :warning:
-<br/> if you don't do that, the script will execute ALL EXISTING FEED into discord ! a massive flood !
+- Found a discord channel : [How to find the Channel ID number](https://support.discord.com/hc/en-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID)
+-  Open and edit the `index.py` or the `index_async.py` file and put your:
+   ```python
+   # Discord Bot Token and Channel ID
+   DISCORD_TOKEN = "ADD_YOUR_DISCORD_TOKEN_HERE" 
+   DISCORD_CHANNEL_ID = "ADD_YOUR_DISCORD_CHANNEL_ID_HERE"  # Replace with your channel ID
+   ```
 
-Change this value to false, when you don't have launched the script for the first time/few days
-<br/> after this step done, kill the script, change the variable to True, then re-execute the script
+### First Step :
+> [!WARNING]
+> The script need to generate a database with all feed, but at this step, the bot don't know what feed was already sent on platform or no.
 
-### Use existing Feed
-Just uncomment the feed you want from the RSS_FEED_URLS (don't forgot change the value of ALLOW_SEND) then execute the script.
+To prevent a flood (and a ban from the platform) edit the bot and change the variable:
+```python
+ALLOW_SEND = False
+```
+Execute the bot: `python3 index.py` or `python3 index_async.py`.
 
+Wait few second after the last "`Done: XXX`", then exit the bot by pressing CTRL+C
 
-### How to Create a new Feed
+### Execution :
+Change the variable:
+```python
+ALLOW_SEND = True
+```
+save and execute again: `python3 index.py` or `python3 index_async.py`.
+
+Let the script running
+
+### Adding New RSS Flux
+> [!IMPORTANT]
+> This step require to have few skill in Python language.
+
 There are 2 places you need to check:
+<br/>
 
-#### __"RSS_FEED_URLS"__
+#### > "<ins>RSS_FEED_URLS</ins>" :
 Contain all the RSS feed the boot will parse, you will see:
  - `name` : a name of the website you want parse (eg: Ars Technica)
  - `url` : the url of the feed (on some website you can found it in the footer of the website)
  - `function` : it's a Dynamic Function Call, it contain the function name of the parser engine.
 
 
-#### __"### PARSE RSS FEED URL ###"__
+#### > "<ins>### PARSE RSS FEED URL ###</ins>" :
 This part of the script contain engine for each parser !
- - Look at the template if you want create a new one
+ - Copy/Look at the template if you want create a new one
  - Create a new one based on the template (don't forgot, the name of the function should match the function name of the "RSS_FEED_URLS")
  - `DEBUG = True` in the script
  - Uncomment the first "if DEBUG" part to check the "returned value" and "index" of the feed link.
@@ -100,6 +144,18 @@ This part of the script contain engine for each parser !
  - If you want to know the author, you can just put it in the "sitename" variable at the end like this: `save_entry(entry.id, f"{sitename} - {entry.author}", entry.title, entry.link, summary, img)` 
 
 
+### Disable existing RSS Flux
+Just uncomment the feed you want from the RSS_FEED_URLS then execute the bot.
+
+---
+
+## Debug !
+The script begin to create a database file (if not exist), then it will check the RSS_FEED_URLS variable, and execute each "rss parser". Each rss parser will save into the database items of the feed like: the id, the title, the summary and if possible the image.
+<br/><br/>
+After the parsing step, the script will check unsent entries in the database and send all of theses entries in discord then mark each entry as sent.
+
+
 ## FAQ
 [TODO]
+
 
