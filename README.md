@@ -2,7 +2,10 @@
 
 This bot read RSS Flux from different source and send the title, description (and image maybe) on different platform.
 
+![Example of Discord screenshot](/img/Example-on-Discord-YabootRSS.png)
+
 it requier few skill in python language if you want add your own rss feed.
+
 
 ## Changelog
 #### 20241227
