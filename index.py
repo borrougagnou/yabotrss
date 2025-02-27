@@ -328,7 +328,7 @@ def fetch_medium_entries(feed_url, sitename):
             print(f" - DEBUG ENTRY ALL: {entry}")
 
         # Skip if the title or description contains "ads"
-        if "I will write hospitality" in entry.title.lower():
+        if "I will write hospitality".lower() in entry.title.lower():
             if SHOW_SKIPPED:
                 print(f"Skipped: [{sitename}] {entry.title}\n")
             continue

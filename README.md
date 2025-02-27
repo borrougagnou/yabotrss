@@ -8,6 +8,10 @@ it requier few skill in python language if you want add your own rss feed.
 
 
 ## Changelog
+#### 20250227
+- Update requirements.txt
+- Fix Medium Skip
+
 #### 20241227
 - Added new Async file : `index_async.py`
 - Blocking "Medium" Ads.

@@ -329,7 +329,7 @@ async def fetch_medium_entries(feed_url, sitename):
             print(f" - DEBUG ENTRY ALL: {entry}")
 
         # Skip if the title or description contains "ads"
-        if "I will write hospitality" in entry.title.lower():
+        if "I will write hospitality".lower() in entry.title.lower():
             if SHOW_SKIPPED:
                 print(f"Skipped: [{sitename}] {entry.title}\n")
             continue
@@ -534,7 +534,7 @@ initialize_database()
 intents = discord.Intents.default()
 client = discord.Client(intents=intents)
 
-@tasks.loop(minutes=8)  # Check for new entries every 10 minutes
+@tasks.loop(minutes=10)  # Check for new entries every 10 minutes
 async def fetch_rss_feeds():
     channel = client.get_channel(int(DISCORD_CHANNEL_ID))
 
