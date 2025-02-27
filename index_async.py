@@ -452,6 +452,12 @@ def parse_html_img(raw_html):
     else:
         return None
 
+def is_url_image(image_url):
+   image_formats = ("image/")
+   r = requests.head(image_url)
+   if r.headers["content-type"] in image_formats:
+      return True
+   return False
 
 # NOT USED YET
 def convert_image_to_base64(image_url):
@@ -576,7 +582,7 @@ async def fetch_rss_feeds():
         embed.set_author(name=f"{sitename}")  # Adjust for each feed if needed
 
         # Add an image if available
-        if img:
+        if img and is_url_image(img):
             embed.set_image(url=f"{img}")
             # embed.set_image(url=entry.media_content[0]['url'])
 

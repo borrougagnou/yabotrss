@@ -8,9 +8,12 @@ it requier few skill in python language if you want add your own rss feed.
 
 
 ## Changelog
+#### 20250228
+- Fixed if the img link not exist
+
 #### 20250227
 - Update requirements.txt
-- Fix Medium Skip
+- Fixed "Medium" RSS - Skip
 
 #### 20241227
 - Added new Async file : `index_async.py`
