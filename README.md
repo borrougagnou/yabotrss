@@ -8,6 +8,10 @@ it requier few skill in python language if you want add your own rss feed.
 
 
 ## Changelog
+#### 20250424
+- Update requirements.txt
+- Fixed image bug with character encoding and image checking
+
 #### 20250228
 - Fixed if the img link not exist
 
