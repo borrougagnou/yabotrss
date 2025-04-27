@@ -2,6 +2,7 @@ import discord
 from discord.ext import tasks
 import sqlite3 # backup rss feed into database
 import requests # if we need to download image
+import urllib.parse # when we need to convert url with weird character into url encoded
 import base64 # if image need to be converted in base64
 from io import BytesIO # (to base64) binary stream using an in-memory bytes buffer
 import feedparser # parse rss feed
@@ -293,6 +294,7 @@ def fetch_arstechnica_entries(feed_url, sitename):
         # Add image if available
         if hasattr(entry, "media_content") and entry.media_content:
             img=entry.media_content[0]['url']
+            #img=custom_encode(entry.media_content[0]['url'])
 
         if DEBUG:
             print(f"==========\n"
@@ -329,6 +331,10 @@ def fetch_medium_entries(feed_url, sitename):
 
         # Skip if the title or description contains "ads"
         if "I will write hospitality".lower() in entry.title.lower():
+            if SHOW_SKIPPED:
+                print(f"Skipped: [{sitename}] {entry.title}\n")
+            continue
+        if "hosting".lower() in entry.title.lower():
             if SHOW_SKIPPED:
                 print(f"Skipped: [{sitename}] {entry.title}\n")
             continue
@@ -452,11 +458,31 @@ def parse_html_img(raw_html):
         return None
 
 def is_url_image(image_url):
-   image_formats = ("image/")
-   r = requests.head(image_url)
-   if r.headers["content-type"] in image_formats:
-      return True
-   return False
+    response = requests.head(image_url, allow_redirects=True, timeout=5)
+    content_type = response.headers.get('Content-Type', '')
+    if content_type.startswith('image/'):
+        return True
+    return False
+
+def custom_encode(url):
+    safe_characters = ":/.?&#-_=+"
+
+    # If the URL is already encoded, just return it
+    if url == urllib.parse.unquote(url):
+        return url
+
+    # Function to encode only the "weird" characters
+    encoded_url = ""
+    
+    # Iterate through each character in the URL
+    for char in url:
+        if char in safe_characters:
+            encoded_url += char  # Keep the safe characters as they are
+        else:
+            # Encode the character and append to the result
+            encoded_url += urllib.parse.quote(char)    
+    print(encoded_url)
+    return encoded_url
 
 # NOT USED YET
 def convert_image_to_base64(image_url):
@@ -581,6 +607,7 @@ async def fetch_rss_feeds():
 
         # Add an image if available
         if img and is_url_image(img):
+            img=custom_encode(img)
             embed.set_image(url=f"{img}")
             # embed.set_image(url=entry.media_content[0]['url'])
 
