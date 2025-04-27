@@ -1,8 +1,11 @@
-### INTERN ###
+### DEBUG ###
+old_implementation/line-by-line/index.orig.py
+old_implementation/async/index.async.py
 test
-rss_feed.db
 index.orig.py
 index.async.py
+rss_feed.db
+
 
 ### Vim ###
 # https://github.com/gisphm/vim-gitignore/blob/master/.gitignore

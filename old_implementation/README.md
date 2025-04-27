@@ -1,5 +1,8 @@
 # Yet Another Bot RSS
 
+> [!WARNING]
+> **You are reading an old documentation**
+
 This bot read RSS Flux from different source and send the title, description (and image maybe) on different platform.
 
 ![Example of Discord screenshot](/img/Example-on-Discord-YabootRSS.png)
