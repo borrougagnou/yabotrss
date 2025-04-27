@@ -1,9 +1,17 @@
+### INTERN ###
+database/*
+!database/.placeholder
+
 ### DEBUG ###
 old_implementation/line-by-line/index.orig.py
 old_implementation/async/index.async.py
 test
 index.orig.py
 index.async.py
+personal_rss_fetcher.py
+rss_fetcher_personal.py
+personal_discord_notifier.py
+discord_notifier_personal.py
 rss_feed.db
 
 
@@ -154,11 +162,17 @@ celerybeat.pid
 # Environments
 .env
 .venv
+.venv_server
+.venv_client
 env/
 venv/
+venv_server/
+venv_client/
 ENV/
 env.bak/
 venv.bak/
+venv_server.bak/
+venv_client.bak/
 
 # Spyder project settings
 .spyderproject
