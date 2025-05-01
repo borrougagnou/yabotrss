@@ -519,22 +519,31 @@ def save_entry(entry_id: str, sitename: str, title: str, link: str, summary: str
     conn.close()
 
 
+def handler_rss_feed_exception(loop, context):
+    msg = context.get("exception", context["message"])
+    print(f"{datetime.datetime.now().strftime('%Y %b %d %H:%M:%S')}: Caught exception in event loop:", msg)
 
 async def fetch_rss_feeds():
     while True:
-        # Collect all tasks for fetching feeds
-        tasks = [
-            globals()[feed["function"]](feed["url"], feed["name"])
-            for feed in RSS_FEED_URLS
-        ]
-    
-        # Run all tasks concurrently
-        await asyncio.gather(*tasks)
-        print("Synchronized")
-        await asyncio.sleep(FETCH_INTERVAL)
+        try:
+            # Collect all tasks for fetching feeds
+            tasks = [
+                globals()[feed["function"]](feed["url"], feed["name"])
+                for feed in RSS_FEED_URLS
+            ]
+
+            # Run all tasks concurrently
+            await asyncio.gather(*tasks)
+            print(f"{datetime.datetime.now().strftime('%Y %b %d %H:%M:%S')}: Synchronized")
+            await asyncio.sleep(FETCH_INTERVAL)
+        except Exception as e:
+            print(f"{datetime.datetime.now().strftime('%Y %b %d %H:%M:%S')}: Error in fetch loop:", e)
 
 
 if __name__ == "__main__":
     init_database()
-    asyncio.run(fetch_rss_feeds())
+    loop = asyncio.get_event_loop()
+    loop.set_exception_handler(handler_rss_feed_exception)
+    loop.run_until_complete(fetch_rss_feeds())
+    #asyncio.run(fetch_rss_feeds())
 
