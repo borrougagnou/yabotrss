@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import datetime # have a date and time for the "Synchronized" line
 import sqlite3 # backup rss feed into database
 import requests # if we need to download image
 import urllib.parse # when we need to convert url with weird character into url encoded
@@ -429,7 +430,7 @@ def parse_html(raw_html: str) -> str:
     soup = BeautifulSoup(raw_html, 'html.parser')
     #if soup.p is not None:
     if hasattr(soup, "p") and soup.p:
-        try: 
+        try:
             return str(soup.p.get_text())
         except AttributeError:
             return "AttributeError"
@@ -440,7 +441,7 @@ def parse_html_img(raw_html: str):
     """Clean and decode HTML content."""
     soup = BeautifulSoup(raw_html, 'html.parser')
     if hasattr(soup, "img") and soup.img:
-        try: 
+        try:
             return soup.img['src']
         except AttributeError:
             return None
@@ -463,14 +464,14 @@ def custom_encode(url: str) -> str:
 
     # Function to encode only the "weird" characters
     encoded_url = ""
-    
+
     # Iterate through each character in the URL
     for char in url:
         if char in safe_characters:
             encoded_url += char  # Keep the safe characters as they are
         else:
             # Encode the character and append to the result
-            encoded_url += urllib.parse.quote(char)    
+            encoded_url += urllib.parse.quote(char)
     print(encoded_url)
     return encoded_url
 
@@ -519,22 +520,35 @@ def save_entry(entry_id: str, sitename: str, title: str, link: str, summary: str
     conn.close()
 
 
+def handler_rss_feed_exception(loop, context):
+    msg = context.get("exception", context["message"])
+    print(f"{datetime.datetime.now().strftime('%Y %b %d %H:%M:%S')}: Caught exception in event loop:", msg)
 
 async def fetch_rss_feeds():
     while True:
-        # Collect all tasks for fetching feeds
-        tasks = [
-            globals()[feed["function"]](feed["url"], feed["name"])
-            for feed in RSS_FEED_URLS
-        ]
-    
-        # Run all tasks concurrently
-        await asyncio.gather(*tasks)
-        print("Synchronized")
-        await asyncio.sleep(FETCH_INTERVAL)
+        try:
+            # Collect all tasks for fetching feeds
+            tasks = [
+                    globals()[feed["function"]](feed["url"], feed["name"])
+                    for feed in RSS_FEED_URLS
+            ]
+
+            # Run all tasks concurrently, log any failures but don’t kill the loop
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            for index, error in enumerate(results):
+                if isinstance(error, Exception):
+                    print(f"{datetime.datetime.now().strftime('%Y %b %d %H:%M:%S')}: ERROR [{RSS_FEED_URLS[index]}]: ", error)
+
+            print(f"{datetime.datetime.now().strftime('%Y %b %d %H:%M:%S')}: Synchronized")
+            await asyncio.sleep(FETCH_INTERVAL)
+        except Exception as e:
+            print(f"{datetime.datetime.now().strftime('%Y %b %d %H:%M:%S')}: Error in fetch loop:", e)
 
 
 if __name__ == "__main__":
     init_database()
-    asyncio.run(fetch_rss_feeds())
+    loop = asyncio.get_event_loop()
+    loop.set_exception_handler(handler_rss_feed_exception)
+    loop.run_until_complete(fetch_rss_feeds())
+    #asyncio.run(fetch_rss_feeds())
 
