@@ -6,10 +6,14 @@ This bot read RSS Flux from different source and send the title, description (an
 
 
 ## Changelog
-#### 20250427
+#### 20250516
+- Added datetime for each "rss fetch"/"push notifier"
 - Refactor the script in 2 differents scripts and put the previous implementation in old_implementation
   - The first script will fetch RSS feed in database
   - The second script will take the feed from the database and send it to discord/slack/telegram/...
+- Fixed some bug linked to duplicate post
+- Fixed some bug from the rss fetch part
+- Fixed some image bug from the discord notifier
 - Improve the README.md
 
 #### 20250424
