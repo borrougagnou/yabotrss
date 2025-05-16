@@ -1,15 +1,15 @@
+#!/usr/bin/env python3
 import discord
 from discord.ext import tasks
 import sqlite3 # backup rss feed into database
 import requests # if we need to download image
-import urllib.parse # when we need to convert url with weird character into url encoded
 import base64 # if image need to be converted in base64
 from io import BytesIO # (to base64) binary stream using an in-memory bytes buffer
 import feedparser # parse rss feed
 
 from bs4 import BeautifulSoup # parse html for parse_html
 from html import unescape # clean html
-import re # clean html
+import re # clean html and convert url with weird character into url encoded
 
 DEBUG = False
 ALLOW_SEND = False
@@ -62,7 +62,7 @@ RSS_FEED_URLS = [
 ### PARSE RSS FEED URL ###
 ##########################
 
-def fetch_thehackernews_entries(feed_url, sitename):
+def fetch_thehackernews_entries(feed_url: str, sitename: str):
     """Fetch entries from The Hacker News RSS feed."""
     feed = feedparser.parse(feed_url)
     #if DEBUG:
@@ -117,7 +117,7 @@ def fetch_thehackernews_entries(feed_url, sitename):
         save_entry(entry.id, sitename, entry.title, entry.link, summary, img)
     return
 
-def fetch_devto_entries(feed_url, sitename):
+def fetch_devto_entries(feed_url: str, sitename: str):
     """Fetch entries from Dev.to RSS feed."""
     feed = feedparser.parse(feed_url)
     #if DEBUG:
@@ -162,7 +162,7 @@ def fetch_devto_entries(feed_url, sitename):
         save_entry(entry.id, f"{sitename} - {entry.author}", entry.title, entry.link, summary, img)
     return
 
-def fetch_waylonwalker_entries(feed_url, sitename):
+def fetch_waylonwalker_entries(feed_url: str, sitename: str):
     """Fetch entries from Waylon Walker RSS feed."""
     feed = feedparser.parse(feed_url)
     #if DEBUG:
@@ -197,9 +197,7 @@ def fetch_waylonwalker_entries(feed_url, sitename):
                 if "type" in link_info and any(
                     ext in link_info["type"] for ext in ["jpeg", "jpg", "png", "webp"]
                 ):
-                    image_url = link_info["href"]
-                    #img = "data:image/jpeg;base64," + convert_image_to_base64(image_url)
-                    img = image_url
+                    img = link_info["href"]
                     break
 
         if DEBUG:
@@ -217,7 +215,7 @@ def fetch_waylonwalker_entries(feed_url, sitename):
         save_entry(entry.id, sitename, entry.title, entry.link, summary, img)
     return
 
-def fetch_theverge_entries(feed_url, sitename):
+def fetch_theverge_entries(feed_url: str, sitename: str):
     """Fetch entries from The Verge RSS feed."""
     feed = feedparser.parse(feed_url)
     #if DEBUG:
@@ -312,7 +310,7 @@ def fetch_arstechnica_entries(feed_url, sitename):
         save_entry(entry.id, sitename, entry.title, entry.link, summary, img)
     return
 
-def fetch_medium_entries(feed_url, sitename):
+def fetch_medium_entries(feed_url: str, sitename: str):
     """Fetch entries from <NAME> RSS feed."""
     feed = feedparser.parse(feed_url)
     #if DEBUG:
@@ -371,7 +369,7 @@ def fetch_medium_entries(feed_url, sitename):
         save_entry(entry.id, f"{sitename} - {entry.author}", entry.title, entry.link, summary, img)
     return
 
-#def fetch_TEMPLATE_entries(feed_url, sitename):
+#def fetch_TEMPLATE_entries(feed_url: str, sitename: str):
 #    """Fetch entries from <NAME> RSS feed."""
 #    feed = feedparser.parse(feed_url)
 #    #if DEBUG:
@@ -428,60 +426,85 @@ def fetch_medium_entries(feed_url, sitename):
 
 ##########################
 
-def clean_html(raw_html):
+def clean_html(raw_html: str) -> str:
     """Clean and decode HTML content."""
     cleanr = re.compile('<.*?>')  # Regex to remove HTML tags
     cleantext = re.sub(cleanr, '', str(raw_html))
     return unescape(cleantext)  # Decode HTML entities
 
-def parse_html(raw_html):
+def parse_html(raw_html: str) -> str:
     """Clean and decode HTML content."""
     soup = BeautifulSoup(raw_html, 'html.parser')
     #if soup.p is not None:
     if hasattr(soup, "p") and soup.p:
-        try: 
+        try:
             return str(soup.p.get_text())
         except AttributeError:
             return "AttributeError"
     else:
         return str(clean_html(soup))
 
-def parse_html_img(raw_html):
+def parse_html_img(raw_html: str):
     """Clean and decode HTML content."""
     soup = BeautifulSoup(raw_html, 'html.parser')
     if hasattr(soup, "img") and soup.img:
-        try: 
+        try:
             return soup.img['src']
         except AttributeError:
             return None
     else:
         return None
 
-def is_url_image(image_url):
-    response = requests.head(image_url, allow_redirects=True, timeout=5)
+def is_url_image(image_url: str):
+    try:
+        response = requests.head(image_url, allow_redirects=True, timeout=5)
+        # If the server refuses HEAD, fall back to GET
+        if response.status_code == 405:
+            response = requests.get(image_url, stream=True, timeout=5)
+    except requests.RequestException:
+        # network error, timeout, DNS failure, etc.
+        return False
+
     content_type = response.headers.get('Content-Type', '')
+    if DEBUG:
+        print("IMAGE_URL:", image_url)
+        print("STATUS_CODE:", response.status_code)
+        print("CONTENT_TYPE:", content_type)
+
     if content_type.startswith('image/'):
         return True
     return False
 
-def custom_encode(url):
-    safe_characters = ":/.?&#-_=+"
+def custom_encode(url: str) -> str:
+    unreserved = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ' + '0123456789' + "-._~"
+    custom_safe_characters = ":/.?&#-_=+"
 
-    # If the URL is already encoded, just return it
-    if url == urllib.parse.unquote(url):
-        return url
+    safe_characters = set(unreserved + custom_safe_characters)
 
-    # Function to encode only the "weird" characters
+    # matches valid percent‑encodings "%2F", "%E2", etc.
+    PERCENT_ENCODED_PATTERN = re.compile(r'%[0-9A-Fa-f]{2}')
+
     encoded_url = ""
-    
-    # Iterate through each character in the URL
-    for char in url:
-        if char in safe_characters:
+    i = 0
+    n = len(url)
+    while i < n:
+        char = url[i]
+
+        if char == '%' and i + 2 < n and PERCENT_ENCODED_PATTERN.match(url[i:i+3]):
+            encoded_url += f"{url[i:i+3]}"
+            i += 3
+            continue
+        elif char in safe_characters:
             encoded_url += char  # Keep the safe characters as they are
         else:
-            # Encode the character and append to the result
-            encoded_url += urllib.parse.quote(char)    
-    print(encoded_url)
+            # Percent-encode each byte of the UTF-8 representation
+            for byte in char.encode('utf-8'):
+                encoded_url += f"%{byte:02X}"
+
+        i += 1
+
+    if DEBUG:
+        print(f"encoded_url: [{encoded_url}]")
     return encoded_url
 
 # NOT USED YET
@@ -502,27 +525,27 @@ def convert_image_to_base64(image_url):
 
 def initialize_database():
     """Initialize the SQLite database."""
-    conn = sqlite3.connect(DB_FILE)
+    conn = sqlite3.connect(DB_FILE, timeout=5)
     cursor = conn.cursor()
     # Create table to store feed entries
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS rss_entries (
-            id TEXT PRIMARY KEY,
-            sitename TEXT,
-            title TEXT,
-            link TEXT,
-            summary TEXT,
-            img TEXT,
-            sent BOOLEAN DEFAULT 0,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            id            TEXT PRIMARY KEY,
+            sitename      TEXT,
+            title         TEXT,
+            link          TEXT,
+            summary       TEXT,
+            img           TEXT,
+            sent          BOOLEAN DEFAULT 0,
+            timestamp     DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     ''')
     conn.commit()
     conn.close()
 
-def save_entry(entry_id, sitename, title, link, summary, img):
+def save_entry(entry_id: str, sitename: str, title: str, link: str, summary: str, img: str):
     """Save a new RSS entry into the database."""
-    conn = sqlite3.connect(DB_FILE)
+    conn = sqlite3.connect(DB_FILE, timeout=5)
     cursor = conn.cursor()
     cursor.execute('''
         INSERT OR IGNORE INTO rss_entries (id, sitename, title, link, summary, img)
@@ -533,7 +556,7 @@ def save_entry(entry_id, sitename, title, link, summary, img):
 
 def mark_entry_as_sent(entry_id):
     """Mark an RSS entry as sent in the database."""
-    conn = sqlite3.connect(DB_FILE)
+    conn = sqlite3.connect(DB_FILE, timeout=5)
     cursor = conn.cursor()
     cursor.execute('''
         UPDATE rss_entries
@@ -545,7 +568,7 @@ def mark_entry_as_sent(entry_id):
 
 def get_unsent_entries():
     """Retrieve unsent RSS entries from the database."""
-    conn = sqlite3.connect(DB_FILE)
+    conn = sqlite3.connect(DB_FILE, timeout=5)
     cursor = conn.cursor()
     cursor.execute('''
         SELECT id, sitename, title, link, summary, img
@@ -568,7 +591,6 @@ client = discord.Client(intents=intents)
 @tasks.loop(minutes=10)  # Check for new entries every 10 minutes
 async def fetch_rss_feeds():
     channel = client.get_channel(int(DISCORD_CHANNEL_ID))
-
     if channel is None:  # If the channel is not found
         print(f"Error: Could not find the channel with ID {DISCORD_CHANNEL_ID}")
         return
@@ -602,14 +624,14 @@ async def fetch_rss_feeds():
                 color=0xffffff  # Use white color
             )
 
-        # Add website name at the top
-        embed.set_author(name=f"{sitename}")  # Adjust for each feed if needed
+        # Add website name at the top of the posts
+        embed.set_author(name=f"{sitename}")
 
         # Add an image if available
         if img and is_url_image(img):
             img=custom_encode(img)
             embed.set_image(url=f"{img}")
-            # embed.set_image(url=entry.media_content[0]['url'])
+        # embed.set_image(url=entry.media_content[0]['url'])
 
 
         # Send the embed to the Discord channel
@@ -620,17 +642,15 @@ async def fetch_rss_feeds():
                         embed=embed
                 )
                 #await channel.send(embed=embed)
-            except Exception as e:
-               print("==========")
-               print(f"ERROR WITH ID: {entry_id}")
-               print(e)
-               print("==========")
-               break
-            else:
                 if ALLOW_MARKED_SEND:
                     # Mark the entry as sent in the database
                     mark_entry_as_sent(entry_id)
                     print(f"done: {entry_id}")
+            except Exception as e:
+                print("==========")
+                print(f"ERROR WITH ID: {entry_id}")
+                print(e)
+                print("==========")
         else:
             if ALLOW_MARKED_SEND:
                 # Mark the entry as sent in the database
@@ -639,10 +659,9 @@ async def fetch_rss_feeds():
 
 
 
-
-
 @client.event
 async def on_ready():
+    global task_started
     print(f"Logged in as {client.user}")
 
     if DEBUG:
@@ -653,9 +672,16 @@ async def on_ready():
               text_channel_list.append(channel)
               print(f"{guild.name}\t| {channel.id}\t| {channel}")
 
-    fetch_rss_feeds.start()
+    # The first time the bot connects, Any time it reconnects (due to Discord downtime or internet hiccups).
+    if not task_started:
+        client.loop.create_task(fetch_rss_feeds())
+        task_started = True
+    #fetch_rss_feeds.start()
 
 
-# Run the bot
-client.run(DISCORD_TOKEN)
+task_started = False
+if __name__ == "__main__":
+    initialize_database()
+    # Run the bot
+    client.run(DISCORD_TOKEN)
 

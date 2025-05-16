@@ -11,6 +11,12 @@ it requier few skill in python language if you want add your own rss feed.
 
 
 ## Changelog
+#### 20250516
+- Fixed multiple bug
+  - image generation problem
+  - bot stopped working
+  - added type check in function
+
 #### 20250424
 - Update requirements.txt
 - Fixed image bug with character encoding and image checking
