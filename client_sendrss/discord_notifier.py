@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import discord
 from discord.ext import tasks
-import datetime # have a date and time for the "entry to be send" line 
+import datetime # have a date and time for the "entry to be send" line
 import sqlite3 # backup rss feed into database
 import requests # if we need to download image
-import urllib.parse # when we need to convert url with weird character into url encoded
+import re # when we need to convert url with weird character into url encoded
 import asyncio
 
 
@@ -23,35 +23,57 @@ FETCH_INTERVAL = 600 # 10min
 
 
 
-
 def is_url_image(image_url: str):
-    response = requests.head(image_url, allow_redirects=True, timeout=5)
+    try:
+        response = requests.head(image_url, allow_redirects=True, timeout=5)
+        # If the server refuses HEAD, fall back to GET
+        if response.status_code == 405:
+            response = requests.get(image_url, stream=True, timeout=5)
+    except requests.RequestException:
+        # network error, timeout, DNS failure, etc.
+        return False
+
     content_type = response.headers.get('Content-Type', '')
+    if DEBUG:
+        print("IMAGE_URL:", image_url)
+        print("STATUS_CODE:", response.status_code)
+        print("CONTENT_TYPE:", content_type)
+
     if content_type.startswith('image/'):
         return True
     return False
 
 def custom_encode(url: str) -> str:
-    safe_characters = ":/.?&#-_=+"
+    unreserved = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ' + '0123456789' + "-._~"
+    custom_safe_characters = ":/.?&#-_=+"
 
-    # If the URL is already encoded, just return it
-    if url == urllib.parse.unquote(url):
-        return url
+    safe_characters = set(unreserved + custom_safe_characters)
 
-    # Function to encode only the "weird" characters
+    # matches valid percent‑encodings "%2F", "%E2", etc.
+    PERCENT_ENCODED_PATTERN = re.compile(r'%[0-9A-Fa-f]{2}')
+
     encoded_url = ""
-    
-    # Iterate through each character in the URL
-    for char in url:
-        if char in safe_characters:
+    i = 0
+    n = len(url)
+    while i < n:
+        char = url[i]
+
+        if char == '%' and i + 2 < n and PERCENT_ENCODED_PATTERN.match(url[i:i+3]):
+            encoded_url += f"{url[i:i+3]}"
+            i += 3
+            continue
+        elif char in safe_characters:
             encoded_url += char  # Keep the safe characters as they are
         else:
-            # Encode the character and append to the result
-            encoded_url += urllib.parse.quote(char)    
-    print(encoded_url)
+            # Percent-encode each byte of the UTF-8 representation
+            for byte in char.encode('utf-8'):
+                encoded_url += f"%{byte:02X}"
+
+        i += 1
+
+    if DEBUG:
+        print(f"encoded_url: [{encoded_url}]")
     return encoded_url
-
-
 
 
 
