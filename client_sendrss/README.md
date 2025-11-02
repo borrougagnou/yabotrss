@@ -1,6 +1,6 @@
 # client_sendrss
 
-This README will cover the send RSS part
+This README will cover the client RSS part
 
 ## Summary
 - [YabotRSS](../README.md#yet-another-bot-rss)
