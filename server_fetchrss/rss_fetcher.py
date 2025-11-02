@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
+from concurrent.futures import ThreadPoolExecutor, as_completed # implement threading
+import logging # implement log system
+import sys # for the log file
+import time # sleep between each iteration
 import datetime # have a date and time for the "Synchronized" line
 import sqlite3 # backup rss feed into database
 import requests # if we need to download image
 import urllib.parse # when we need to convert url with weird character into url encoded
 import feedparser # parse rss feed
-import asyncio
 
 from bs4 import BeautifulSoup # parse html for parse_html
 from html import unescape # clean html
@@ -17,6 +20,7 @@ SHOW_SKIPPED = True
 # SQLite Database Setup
 DB_FILE = f"{__file__.rsplit('/', 1)[0]}/../database/rss_feed.db"
 FETCH_INTERVAL = 600 # 10min
+THREAD_LIMIT = 6
 
 # RSS Feed URL to Function Mapping
 RSS_FEED_URLS = [
@@ -57,9 +61,9 @@ RSS_FEED_URLS = [
 ### PARSE RSS FEED URL ###
 ##########################
 
-async def fetch_thehackernews_entries(feed_url: str, sitename: str):
+def fetch_thehackernews_entries(feed_url: str, sitename: str):
     """Fetch entries from The Hacker News RSS feed."""
-    feed = await asyncio.to_thread(feedparser.parse, feed_url)
+    feed = feedparser.parse(feed_url)
     #if DEBUG:
     #    entry = feed.entries[0]
     #    print(f"==========")
@@ -109,12 +113,12 @@ async def fetch_thehackernews_entries(feed_url: str, sitename: str):
                   f"==========\n\n")
 
         # Save entry to the database
-        await asyncio.to_thread(save_entry, entry.id, sitename, entry.title, entry.link, summary, img)
+        save_entry(entry.id, sitename, entry.title, entry.link, summary, img)
     return
 
-async def fetch_devto_entries(feed_url: str, sitename: str):
+def fetch_devto_entries(feed_url: str, sitename: str):
     """Fetch entries from Dev.to RSS feed."""
-    feed = await asyncio.to_thread(feedparser.parse, feed_url)
+    feed = feedparser.parse(feed_url)
     #if DEBUG:
     #    entry = feed.entries[0]
     #    print(f"==========")
@@ -154,12 +158,12 @@ async def fetch_devto_entries(feed_url: str, sitename: str):
                   f"==========\n\n")
 
         # Save entry to the database
-        await asyncio.to_thread(save_entry, entry.id, f"{sitename} - {entry.author}", entry.title, entry.link, summary, img)
+        save_entry(entry.id, f"{sitename} - {entry.author}", entry.title, entry.link, summary, img)
     return
 
-async def fetch_waylonwalker_entries(feed_url: str, sitename: str):
+def fetch_waylonwalker_entries(feed_url: str, sitename: str):
     """Fetch entries from Waylon Walker RSS feed."""
-    feed = await asyncio.to_thread(feedparser.parse, feed_url)
+    feed = feedparser.parse(feed_url)
     #if DEBUG:
     #    entry = feed.entries[0]
     #    print(f"==========")
@@ -207,12 +211,12 @@ async def fetch_waylonwalker_entries(feed_url: str, sitename: str):
                   f"==========\n\n")
 
         # Save entry to the database
-        await asyncio.to_thread(save_entry, entry.id, sitename, entry.title, entry.link, summary, img)
+        save_entry(entry.id, sitename, entry.title, entry.link, summary, img)
     return
 
-async def fetch_theverge_entries(feed_url: str, sitename: str):
+def fetch_theverge_entries(feed_url: str, sitename: str):
     """Fetch entries from The Verge RSS feed."""
-    feed = await asyncio.to_thread(feedparser.parse, feed_url)
+    feed = feedparser.parse(feed_url)
     #if DEBUG:
     #    entry = feed.entries[0]
     #    print(f"==========")
@@ -253,12 +257,12 @@ async def fetch_theverge_entries(feed_url: str, sitename: str):
                   f"==========\n\n")
 
         # Save entry to the database
-        await asyncio.to_thread(save_entry, entry.id, sitename, entry.title, entry.link, summary, img)
+        save_entry(entry.id, sitename, entry.title, entry.link, summary, img)
     return
 
-async def fetch_arstechnica_entries(feed_url: str, sitename: str):
+def fetch_arstechnica_entries(feed_url: str, sitename: str):
     """Fetch entries from ArsTechnica RSS feed."""
-    feed = await asyncio.to_thread(feedparser.parse, feed_url)
+    feed = feedparser.parse(feed_url)
 #    if DEBUG:
 #        entry = feed.entries[0]
 #        print(f"==========")
@@ -301,12 +305,12 @@ async def fetch_arstechnica_entries(feed_url: str, sitename: str):
                   f"==========\n\n")
 
         # Save entry to the database
-        await asyncio.to_thread(save_entry, entry.id, sitename, entry.title, entry.link, summary, img)
+        save_entry(entry.id, sitename, entry.title, entry.link, summary, img)
     return
 
-async def fetch_medium_entries(feed_url: str, sitename: str):
-    """Fetch entries from <NAME> RSS feed."""
-    feed = await asyncio.to_thread(feedparser.parse, feed_url)
+def fetch_medium_entries(feed_url: str, sitename: str):
+    """Fetch entries from Medium RSS feed."""
+    feed = feedparser.parse(feed_url)
     #if DEBUG:
     #    entry = feed.entries[0]
     #    print(f"==========")
@@ -333,7 +337,7 @@ async def fetch_medium_entries(feed_url: str, sitename: str):
 
         # Manage the summary content
         summary = None
-        soup = await asyncio.to_thread(BeautifulSoup, entry.summary, 'html.parser')
+        soup = BeautifulSoup(entry.summary, 'html.parser')
         summary = soup.get_text()
         summary = summary.replace('\n', '').replace('\r', '')
         summary = summary.replace('Continue reading on Medium', '').replace('»', '')
@@ -359,12 +363,12 @@ async def fetch_medium_entries(feed_url: str, sitename: str):
                   f"==========\n\n")
 
         # Save entry to the database
-        await asyncio.to_thread(save_entry, entry.id, f"{sitename} - {entry.author}", entry.title, entry.link, summary, img)
+        save_entry(entry.id, f"{sitename} - {entry.author}", entry.title, entry.link, summary, img)
     return
 
 #async def fetch_TEMPLATE_entries(feed_url: str, sitename: str):
 #    """Fetch entries from <NAME> RSS feed."""
-#    feed = await asyncio.to_thread(feedparser.parse, feed_url)
+#    feed = feedparser.parse(feed_url)
 #    #if DEBUG:
 #    #    entry = feed.entries[0]
 #    #    print(f"==========")
@@ -387,7 +391,7 @@ async def fetch_medium_entries(feed_url: str, sitename: str):
 #
 #        # Manage the summary content
 #        summary = None
-#        soup = await asyncio.to_thread(BeautifulSoup, entry.summary, 'html.parser')
+#        soup = BeautifulSoup(entry.summary, 'html.parser')
 #        summary = soup.get_text()
 #        summary = summary.replace('\n', '').replace('\r', '')
 #
@@ -413,11 +417,22 @@ async def fetch_medium_entries(feed_url: str, sitename: str):
 #                  f"==========\n\n")
 #
 #        # Save entry to the database
-#        await asyncio.to_thread(save_entry, entry.id, sitename, entry.title, entry.link, summary, img)
+#        save_entry(entry.id, sitename, entry.title, entry.link, summary, img)
 #    return
 
 
 ##########################
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(threadName)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('rss_fetcher.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
 
 def clean_html(raw_html: str) -> str:
     """Clean and decode HTML content."""
@@ -520,36 +535,162 @@ def save_entry(entry_id: str, sitename: str, title: str, link: str, summary: str
     conn.close()
 
 
-def handler_rss_feed_exception(loop, context):
-    msg = context.get("exception", context["message"])
-    print(f"{datetime.datetime.now().strftime('%Y %b %d %H:%M:%S')}: Caught exception in event loop:", msg)
+def fetch_rss_feeds():
+    results = []
+    with ThreadPoolExecutor(max_workers=THREAD_LIMIT) as executor:
+        send_to_feed = {
+            executor.submit(fetch_single_rss_feed, feed): feed['name']
+            for feed in RSS_FEED_URLS
+        }
 
-async def fetch_rss_feeds():
-    while True:
+        # Track completed and failed feeds
+        completed_feeds = set()
+
+
         try:
-            # Collect all tasks for fetching feeds
-            tasks = [
-                    globals()[feed["function"]](feed["url"], feed["name"])
-                    for feed in RSS_FEED_URLS
-            ]
+            # Wait for all to complete
+            # This timeout kills the entire loop if ANY feed takes >3min
+            for future in as_completed(send_to_feed, timeout=180):
+                feed_name = send_to_feed[future]
+                try:
+                    # Set a timeout PER FEED
+                    result = future.result(timeout=120) # 2min per feed
+                    if not result["success"]:
+                        logger.error(f"[FAILED] {result['name']}: {result['error']}")
+                except TimeoutError:
+                    logger.error(f"[TIMEOUT] {feed_name}: TIMEOUT")
+                except Exception as e:
+                    logger.error(f"[ERROR] [{feed_name}] Exception: {e}")
 
-            # Run all tasks concurrently, log any failures but don’t kill the loop
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            for index, error in enumerate(results):
-                if isinstance(error, Exception):
-                    print(f"{datetime.datetime.now().strftime('%Y %b %d %H:%M:%S')}: ERROR [{RSS_FEED_URLS[index]}]: ", error)
+        except concurrent.futures.TimeoutError as e:
+            # This is the KEY !!: Handle timeout
+            logger.error(f"Timeout waiting for feeds to complete: {e}")
 
-            print(f"{datetime.datetime.now().strftime('%Y %b %d %H:%M:%S')}: Synchronized")
-        except Exception as e:
-            print(f"{datetime.datetime.now().strftime('%Y %b %d %H:%M:%S')}: Error in fetch loop:", e)
-        finally:
-            await asyncio.sleep(FETCH_INTERVAL)
+            # Find which feeds didn't complete
+            error_feeds = []
+            for feed, future in send_to_feed.items():
+                if feed['name'] not in completed_feeds:
+                    error_feeds.append(feed)
+
+            # Add timeout results for incomplete feeds
+            for feed in error_feeds:
+                results.append({
+                    "name": feed["name"],
+                    "function": feed["function"],
+                    "success": False,
+                    "error": f"Feed timeout after {timeout_per_feed}s"
+                })
+                logger.error(f"Feed {feed['name']} timed out and will be retried next cycle")
+
+    return results
+
+
+def fetch_single_rss_feed(feed):
+    """
+    Safely executes ANY feed function.
+    Catches ALL errors so other threads continue even if one fails.
+    """
+
+    feed_name = feed.get("name", "Unknown")
+    function_name = feed.get("function")
+    feed_url = feed.get("url")
+    result = {
+        "name": feed_name,
+        "function": function_name,
+        "success": False,
+        "error": None
+    }
+
+    try:
+        logger.info(f"Executing {function_name} for {feed_name}")
+
+        if function_name not in globals():
+            raise ValueError(f"Function {function_name} not found")
+
+        fetch_function = globals()[function_name]
+        fetch_function(feed_url, feed_name)
+
+        result["success"] = True
+        logger.info(f"[OK] {feed_name} completed")
+
+    except Exception as e:
+        result["error"] = str(e)
+        logger.error(f"[ERROR] {feed_name} FAILED: {e}", exc_info=True)
+        # Don't use "raise", we want ALL errors visible
+
+    return result
 
 
 if __name__ == "__main__":
-    init_database()
-    loop = asyncio.get_event_loop()
-    loop.set_exception_handler(handler_rss_feed_exception)
-    loop.run_until_complete(fetch_rss_feeds())
-    #asyncio.run(fetch_rss_feeds())
+    # Initialize logging
+    logger.info("RSS Fetcher starting...")
+
+    try:
+        init_database()
+    except Exception as e:
+        logger.critical(f"Database init failed, exiting: {e}")
+        sys.exit(1)
+
+
+    if len(sys.argv) > 1:
+        command = sys.argv[1]
+
+        if command == "once":
+            # Run all feed once and exit - GOOD FOR DEBUGGING
+            logger.info("Running single fetch cycle")
+            results = fetch_rss_feeds()
+
+            for result in results:
+                if result["error"]:
+                    print(f"[ERROR]: {result['error']}")
+
+        elif command == "continuous":
+            # Run all feed continuously at specified intervals.
+            interval = int(sys.argv[2]) if len(sys.argv) > 2 else FETCH_INTERVAL
+            logger.info(f"Running continuous fetch cycle (interval: {interval}s)")
+
+            while True:
+                try:
+                    fetch_rss_feeds()
+                except KeyboardInterrupt:
+                    logger.info("Keyboard interrupt, shutting down...")
+                    break
+                except Exception as e:
+                    logger.error(f"Unexpected error in fetch loop: {e}", exc_info=True)
+                finally:
+                    time.sleep(interval)
+                    print("============================================================")
+
+        elif command == "test":
+            # Test a SINGLE feed - BEST FOR DEBUGGING
+            if len(sys.argv) < 3:
+                print("Usage: python rss_fetcher.py test <feed_name>")
+                sys.exit(1)
+
+            feed_name = sys.argv[2]
+            feed = next((f for f in RSS_FEED_URLS if f["name"] == feed_name), None)
+
+            if not feed:
+                print(f"Feed '{feed_name}' not found")
+                print(f"Available: {', '.join(f['name'] for f in RSS_FEED_URLS)}")
+                sys.exit(1)
+
+            logger.info(f"Testing single feed: {feed_name}")
+            result = fetch_single_rss_feed(feed)
+            print(f"\nResult: {'Success' if result['success'] else 'Failed'}")
+            if result['error']:
+                print(f"Error: {result['error']}")
+
+        else:
+            print(f"Unknown command: {command}")
+            print("\nUsage:")
+            print("  python rss_fetcher.py once              - Run once and exit")
+            print("  python rss_fetcher.py continuous [secs] - Run continuously")
+            print("  python rss_fetcher.py test <feed_name>  - Test single feed")
+            sys.exit(1)
+
+
+    else:
+        # Default: run once
+        fetch_rss_feeds()
 
