@@ -6,6 +6,14 @@ This bot read RSS Flux from different source and send the title, description (an
 
 
 ## Changelog
+#### 20251104
+- Changed some log with logging library for the server part
+- Refactor again the script
+  - The fetch RSS feed script use now thread instead of async
+  - Debug async/await is way too difficult
+- Removed old procedure, all of that are now deprecated
+- Soon merge on master after the end of the test
+
 #### 20250516
 - Added datetime for each "rss fetch"/"push notifier"
 - Refactor the script in 2 differents scripts and put the previous implementation in old_implementation
@@ -14,7 +22,6 @@ This bot read RSS Flux from different source and send the title, description (an
 - Fixed some bug linked to duplicate post
 - Fixed some bug from the rss fetch part
 - Fixed some image bug from the discord notifier
-- Improve the README.md
 
 #### 20250424
 - Update requirements.txt
@@ -58,7 +65,6 @@ This bot read RSS Flux from different source and send the title, description (an
     - Setup on Slack
     - Setup on Telegram
     - [Contribute](client_sendrss/README.md#contribute)
-  - [Old Implementation](old_implementation/README.md)
 
 
 ## How it work
@@ -75,9 +81,4 @@ Please follow the instruction: [server_fetchrss/README.md](server_fetchrss/READM
 ## Send feed to client bot
 
 Please follow the instruction: [client_sendrss/README.md](client_sendrss/README.md)
-
-
-## DEPRECATED - old procedure
-
-Please follow the instruction: [old_implementation/README.md](old_implementation/README.md#)
 

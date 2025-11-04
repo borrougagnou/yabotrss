@@ -23,8 +23,8 @@ This README will cover the client RSS part
       - [New Application on discord.com](#new-application-on-discordcom)
       - [Configure discord_notifier.py](#configure-discord_notifierpy)
       - [Execute](#execute)
-    - Setup on Slack
-    - Setup on Telegram
+    - Setup on Slack - TODO
+    - Setup on Telegram - TODO
     - [Contribute](#contribute)
 
 

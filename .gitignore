@@ -3,17 +3,12 @@ database/*
 !database/.placeholder
 
 ### DEBUG ###
-old_implementation/line-by-line/index.orig.py
-old_implementation/async/index.async.py
+async_client_sendrss/*
+async_server_fetchrss/*
+client_sendrss/personal_discord_notifier.py
+server_fetchrss/personal_rss_fetcher.py
 test
-index.orig.py
-index.async.py
-personal_rss_fetcher.py
-rss_fetcher_personal.py
-personal_discord_notifier.py
-discord_notifier_personal.py
 rss_feed.db
-
 
 ### Vim ###
 # https://github.com/gisphm/vim-gitignore/blob/master/.gitignore

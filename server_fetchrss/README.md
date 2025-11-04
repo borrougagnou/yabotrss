@@ -27,7 +27,7 @@ This README will cover the RSS Fetch part
 
 ## Requirements
 
-- Python 3.9+
+- Python 3.9+ (also tested with Python 3.13)
 - pip/virtualenv
 
 
@@ -64,8 +64,15 @@ cd ..
 To execute the script:
 ```
 source ./server_fetchrss/venv_server/bin/activate
-python3 ./server_fetchrss/rss_fetcher.py
+python3 ./server_fetchrss/rss_fetcher.py continuous
 ```
+
+Also the script possess multiple mode:
+
+- python3 rss_fetcher.py once - This mode will fetch all feed once then exit")
+- python3 rss_fetcher.py continuous [secs] - This mode will run indefinitely (sec by default: 10mins)")
+- python3 rss_fetcher.py test <feed_name>  - This mode will test a single feed")
+
 
 
 ## What to do next ?
@@ -110,6 +117,12 @@ After the parsing step, the script will check unsent entries in the database and
 
 
 ## FAQ
-[TODO]
+How to debug ?
 
+you can read the `rss_fetcher.log`
+
+or use the debug breakpoints
+```python
+import pdb; pdb.set_trace()  # Add this line where you want to stop
+```
 
