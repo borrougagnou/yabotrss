@@ -6,6 +6,9 @@ This bot read RSS Flux from different source and send the title, description (an
 
 
 ## Changelog
+#### 20251114
+- Add a timer between each fetch
+
 #### 20251104
 - Changed some log with logging library for the server part
 - Refactor again the script

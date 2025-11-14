@@ -534,6 +534,47 @@ def save_entry(entry_id: str, sitename: str, title: str, link: str, summary: str
     conn.commit()
     conn.close()
 
+def countdown_timer(ttl_seconds):
+    while ttl_seconds > 0:
+        # 365 days in a year
+        years, time_remaining = divmod(ttl_seconds, 60 * 60 * 24 * 365)
+        # 30 days in a month
+        months, time_remaining = divmod(time_remaining, 60 * 60 * 24 * 30)
+        # 7 days in a week
+        weeks, time_remaining = divmod(time_remaining, 60 * 60 * 24 * 7)
+        # 24 hours in a day
+        days, time_remaining = divmod(time_remaining, 60 * 60 * 24)
+        # 60 minutes in an hour
+        hours, time_remaining = divmod(time_remaining, 60 * 60)
+        # 60 seconds in a minute
+        minutes, seconds = divmod(time_remaining, 60)
+
+        countdown_str = "=== NEXT FETCH IN: "
+        if years > 0:
+            countdown_str += f"{years} year{'s' if years > 1 else ''}"
+        elif months > 0:
+            countdown_str += f"{months} month{'s' if months > 1 else ''}"
+        elif weeks > 0:
+            countdown_str += f"{weeks} week{'s' if weeks > 1 else ''}"
+        elif days > 0:
+            countdown_str += f"{days} day{'s' if days > 1 else ''}"
+        elif hours > 0:
+            countdown_str += f"{hours} hour{'s' if hours > 1 else ''}"
+        elif minutes > 0:
+            countdown_str += f"{minutes} minute{'s' if minutes > 1 else ''}"
+        elif seconds > 0:
+            countdown_str += f"{seconds} second{'s' if seconds > 1 else ''}"
+        
+        countdown_str += " ========================================"
+        print(f"\r\033[K{countdown_str}", end="", flush=True)
+        time.sleep(5)  # Wait for 5 seconds
+        ttl_seconds -= 5  # Decrease the time by 5 seconds
+
+    # Flush the countdown timer line and add "===" to separate each loop 
+    print(f"\r\033[K===\n", end="", flush=True)
+
+
+
 
 def fetch_rss_feeds():
     results = []
@@ -658,8 +699,7 @@ if __name__ == "__main__":
                 except Exception as e:
                     logger.error(f"Unexpected error in fetch loop: {e}", exc_info=True)
                 finally:
-                    time.sleep(interval)
-                    print("============================================================")
+                    countdown_timer(interval)
 
         elif command == "test":
             # Test a SINGLE feed - BEST FOR DEBUGGING
